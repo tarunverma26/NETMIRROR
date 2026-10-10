@@ -7,6 +7,8 @@ import { loginSchema } from '@/lib/validations';
 import { signToken, setAuthCookie } from '@/lib/jwt';
 import { checkRateLimit, applySecurityHeaders } from '@/lib/security';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const rateCheck = checkRateLimit(req, 30, 60 * 1000);

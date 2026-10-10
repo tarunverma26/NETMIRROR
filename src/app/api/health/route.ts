@@ -4,6 +4,8 @@ import { connectToDatabase } from '@/lib/db';
 import { checkStorageHealth } from '@/lib/storage';
 import { applySecurityHeaders } from '@/lib/security';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const isMongoConnected = await connectToDatabase();
   const storageHealth = await checkStorageHealth();
