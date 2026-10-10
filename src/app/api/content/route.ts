@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/db';
 import Content from '@/models/Content';
-import { dataStore } from '@/lib/dataStore';
+import { dataStore, normalizeIndustrySlug } from '@/lib/dataStore';
 import { applySecurityHeaders } from '@/lib/security';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
@@ -19,28 +22,38 @@ export async function GET(req: NextRequest) {
     const isMongo = await connectToDatabase();
 
     if (isMongo) {
-      // Build MongoDB query
-      const query: Record<string, unknown> = { isPublished: true };
+      // Build MongoDB query: tolerant of explicit true or missing isPublished
+      const query: Record<string, unknown> = { isPublished: { $ne: false } };
 
-      if (type) query.type = type;
-      if (industry) query.industry = industry;
+      if (type) {
+        query.type = { $regex: new RegExp(`^${type.trim()}$`, 'i') };
+      }
+
+      if (industry) {
+        const slug = normalizeIndustrySlug(industry);
+        const pattern = `^${slug.replace(/-/g, '[- ]?')}$`;
+        query.industry = { $regex: new RegExp(pattern, 'i') };
+      }
+
       if (year) query.year = year;
-      if (genre) query.genre = { $in: [new RegExp(genre, 'i')] };
+      if (genre) query.genre = { $in: [new RegExp(genre.trim(), 'i')] };
 
       if (search) {
+        const searchRegex = { $regex: search.trim(), $options: 'i' };
         query.$or = [
-          { title: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { cast: { $regex: search, $options: 'i' } },
-          { genre: { $regex: search, $options: 'i' } },
-          { remixName: { $regex: search, $options: 'i' } },
-          { industry: { $regex: search, $options: 'i' } },
+          { title: searchRegex },
+          { description: searchRegex },
+          { cast: searchRegex },
+          { genre: searchRegex },
+          { remixName: searchRegex },
+          { industry: searchRegex },
         ];
       }
 
       let sortOptions: Record<string, 1 | -1> = { createdAt: -1 };
       if (sort === 'rating') sortOptions = { rating: -1 };
       if (sort === 'views') sortOptions = { views: -1 };
+      if (sort === 'bpm') sortOptions = { bpm: -1 };
       if (sort === 'year') sortOptions = { year: -1 };
 
       const total = await Content.countDocuments(query);
@@ -50,20 +63,21 @@ export async function GET(req: NextRequest) {
         .limit(limit)
         .lean();
 
-      return applySecurityHeaders(
-        NextResponse.json({
-          items,
-          total,
-          page,
-          totalPages: Math.ceil(total / limit),
-        })
-      );
+      const response = NextResponse.json({
+        items,
+        total,
+        page,
+        totalPages: Math.ceil(total / limit),
+      });
+
+      response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      return applySecurityHeaders(response);
     }
 
     // High performance fallback data store
     const result = dataStore.getContentList({
       type,
-      industry,
+      industry: industry ? normalizeIndustrySlug(industry) : undefined,
       search,
       genre,
       year,
@@ -73,7 +87,9 @@ export async function GET(req: NextRequest) {
       isPublished: true,
     });
 
-    return applySecurityHeaders(NextResponse.json(result));
+    const response = NextResponse.json(result);
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return applySecurityHeaders(response);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Error fetching content';
     return applySecurityHeaders(

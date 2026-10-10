@@ -9,6 +9,8 @@ import ContentCard, { ContentCardItem } from '@/components/ui/ContentCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 import { useAudio } from '@/context/AudioContext';
 
+export const dynamic = 'force-dynamic';
+
 export default function SongsHubPage() {
   const [songs, setSongs] = useState<ContentCardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -17,7 +19,7 @@ export default function SongsHubPage() {
   useEffect(() => {
     async function loadSongs() {
       try {
-        const res = await fetch('/api/content?type=song&limit=12');
+        const res = await fetch('/api/content?type=song&limit=12', { cache: 'no-store' });
         if (res.ok) {
           const d = await res.json();
           setSongs(d.items || []);

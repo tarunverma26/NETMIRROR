@@ -252,14 +252,20 @@ export default function AdminUploadPage() {
             }
           : {
               type: contentType,
-              industry,
+              industry: industry.toLowerCase().trim().replace(/\s+/g, '-'),
               title: title.trim(),
               description: description.trim(),
-              genre: genre ? genre.split(',').map((s) => s.trim()) : ['Cinema'],
+              genre: genre
+                ? genre.split(',').map((s) => s.trim()).filter(Boolean)
+                : industry === 'srajen-dj'
+                ? ['Club VIP Mix', 'EDM', 'Bass Boosted']
+                : contentType === 'song'
+                ? ['Soundtrack', 'Music']
+                : ['Cinema', 'Drama'],
               year: Number(year),
               language: language.trim() || 'Hindi',
-              cast: cast ? cast.split(',').map((s) => s.trim()) : [],
-              thumbnailUrl: finalThumbUrl,
+              cast: cast ? cast.split(',').map((s) => s.trim()).filter(Boolean) : [],
+              thumbnailUrl: finalThumbUrl || (industry === 'srajen-dj' ? 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop' : undefined),
               mediaUrl: mediaResult.publicUrl,
               duration: duration || (contentType === 'song' ? '3:45' : '2h 15m'),
               isPublished: true,
@@ -268,8 +274,8 @@ export default function AdminUploadPage() {
               mimeType: mediaResult.mimeType,
               ...(contentType === 'song'
                 ? {
-                    remixName: remixName.trim() || undefined,
-                    bpm: bpm ? Number(bpm) : undefined,
+                    remixName: remixName.trim() || (industry === 'srajen-dj' ? 'Original Mix' : undefined),
+                    bpm: bpm ? Number(bpm) : (industry === 'srajen-dj' ? 128 : undefined),
                   }
                 : {}),
             };
@@ -338,28 +344,33 @@ export default function AdminUploadPage() {
 
         const uploadRes = await uploader.start();
 
+        const normInd = industry.toLowerCase().trim().replace(/\s+/g, '-');
         // Save song record to database
         const payload = {
           type: 'song',
-          industry,
+          industry: normInd,
           title: item.title,
           description: `Track from ${item.title}`,
-          genre: bulkCommonGenre ? [bulkCommonGenre] : ['Soundtrack'],
+          genre: bulkCommonGenre
+            ? [bulkCommonGenre]
+            : normInd === 'srajen-dj'
+            ? ['Club VIP Mix', 'EDM', 'Bass Boosted']
+            : ['Soundtrack'],
           year: new Date().getFullYear(),
           language: 'Hindi',
           cast: bulkCommonArtist ? [bulkCommonArtist] : ['Featured Artist'],
           thumbnailUrl:
-            industry === 'srajen-dj'
+            normInd === 'srajen-dj'
               ? 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop'
               : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop',
           mediaUrl: uploadRes.publicUrl,
-          duration: item.duration,
+          duration: item.duration || '3:45',
           isPublished: true,
           storageKey: uploadRes.key,
           fileSize: uploadRes.fileSize,
           mimeType: uploadRes.mimeType,
-          remixName: bulkCommonRemixName.trim() || undefined,
-          bpm: bulkCommonBpm ? Number(bulkCommonBpm) : undefined,
+          remixName: bulkCommonRemixName.trim() || (normInd === 'srajen-dj' ? 'Original Mix' : undefined),
+          bpm: bulkCommonBpm ? Number(bulkCommonBpm) : (normInd === 'srajen-dj' ? 128 : undefined),
         };
 
         await fetch('/api/admin/content', {

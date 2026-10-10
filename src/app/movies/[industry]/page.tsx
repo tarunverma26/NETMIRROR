@@ -15,6 +15,8 @@ const industries = [
   { id: 'tollywood', name: 'Tollywood' },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function IndustryMoviesPage() {
   const params = useParams();
   const currentIndustry = (params.industry as string) || 'bollywood';
@@ -37,7 +39,7 @@ export default function IndustryMoviesPage() {
       if (selectedYear) q.set('year', selectedYear);
       if (sort) q.set('sort', sort);
 
-      const res = await fetch(`/api/content?${q.toString()}`);
+      const res = await fetch(`/api/content?${q.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const d = await res.json();
         setMovies(d.items || []);

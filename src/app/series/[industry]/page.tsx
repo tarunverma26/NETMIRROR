@@ -15,6 +15,8 @@ const industries = [
   { id: 'tollywood', name: 'Tollywood' },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function IndustrySeriesPage() {
   const params = useParams();
   const currentIndustry = (params.industry as string) || 'bollywood';
@@ -31,7 +33,7 @@ export default function IndustrySeriesPage() {
       q.set('industry', currentIndustry);
       if (search) q.set('search', search);
 
-      const res = await fetch(`/api/content?${q.toString()}`);
+      const res = await fetch(`/api/content?${q.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const d = await res.json();
         setSeriesList(d.items || []);

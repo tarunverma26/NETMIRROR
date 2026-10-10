@@ -8,6 +8,8 @@ import MovieGalleryBg from '@/components/backgrounds/MovieGalleryBg';
 import ContentCard, { ContentCardItem } from '@/components/ui/ContentCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 
+export const dynamic = 'force-dynamic';
+
 export default function MoviesHubPage() {
   const [movies, setMovies] = useState<ContentCardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function MoviesHubPage() {
   useEffect(() => {
     async function loadMovies() {
       try {
-        const res = await fetch('/api/content?type=movie&limit=12');
+        const res = await fetch('/api/content?type=movie&limit=12', { cache: 'no-store' });
         if (res.ok) {
           const d = await res.json();
           setMovies(d.items || []);

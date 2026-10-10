@@ -53,7 +53,7 @@ export default function AdminManagePage() {
       if (selectedIndustry !== 'all') params.set('industry', selectedIndustry);
       if (search) params.set('search', search);
 
-      const res = await fetch(`/api/admin/content?${params.toString()}`);
+      const res = await fetch(`/api/admin/content?${params.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setItems(data.items || []);

@@ -22,6 +22,51 @@ declare global {
   } | undefined;
 }
 
+import fs from 'fs';
+import path from 'path';
+
+export function normalizeIndustrySlug(industry?: string): string {
+  if (!industry) return 'bollywood';
+  return industry.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+const STORAGE_STORE_PATH = path.join(process.cwd(), 'storage', 'content-store.json');
+
+function persistStoreToDisk() {
+  try {
+    if (!global.__reelbeat_store__) return;
+    const dir = path.dirname(STORAGE_STORE_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      STORAGE_STORE_PATH,
+      JSON.stringify(
+        {
+          content: global.__reelbeat_store__.content,
+          episodes: global.__reelbeat_store__.episodes,
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
+  } catch (err) {
+    // Non-blocking in serverless environments where /storage may be read-only
+  }
+}
+
+function loadPersistedStore(): { content: SeedContent[]; episodes: SeedEpisode[] } | null {
+  try {
+    if (fs.existsSync(STORAGE_STORE_PATH)) {
+      const raw = fs.readFileSync(STORAGE_STORE_PATH, 'utf-8');
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.content) && Array.isArray(data.episodes)) {
+        return data;
+      }
+    }
+  } catch {}
+  return null;
+}
+
 function initStore() {
   if (global.__reelbeat_store__ && global.__reelbeat_store__.initialized) {
     return global.__reelbeat_store__;
@@ -53,12 +98,37 @@ function initStore() {
     },
   ];
 
+  const persisted = loadPersistedStore();
+  let contentList: SeedContent[] = JSON.parse(JSON.stringify(initialContent));
+  let episodesList: SeedEpisode[] = JSON.parse(JSON.stringify(initialEpisodes));
+
+  if (persisted) {
+    // Merge persisted items with initial items, prioritizing persisted modifications
+    const contentMap = new Map<string, SeedContent>();
+    contentList.forEach((c) => contentMap.set(c._id, c));
+    persisted.content.forEach((c) => contentMap.set(c._id, c));
+    contentList = Array.from(contentMap.values());
+
+    const epMap = new Map<string, SeedEpisode>();
+    episodesList.forEach((e) => epMap.set(e._id, e));
+    persisted.episodes.forEach((e) => epMap.set(e._id, e));
+    episodesList = Array.from(epMap.values());
+  }
+
+  // Normalize all industry values on load
+  contentList.forEach((c) => {
+    c.industry = normalizeIndustrySlug(c.industry) as any;
+    if (c.isPublished === undefined) c.isPublished = true;
+  });
+
   global.__reelbeat_store__ = {
     users: initialUsers,
-    content: JSON.parse(JSON.stringify(initialContent)),
-    episodes: JSON.parse(JSON.stringify(initialEpisodes)),
+    content: contentList,
+    episodes: episodesList,
     initialized: true,
   };
+
+  persistStoreToDisk();
 
   return global.__reelbeat_store__;
 }
@@ -121,23 +191,31 @@ export const dataStore = {
     let items = [...store.content];
 
     if (filters.isPublished !== undefined) {
-      items = items.filter((c) => c.isPublished === filters.isPublished);
+      if (filters.isPublished) {
+        // Tolerant: include explicit true or undefined/missing
+        items = items.filter((c) => c.isPublished !== false);
+      } else {
+        items = items.filter((c) => c.isPublished === false);
+      }
     }
 
     if (filters.type) {
-      items = items.filter((c) => c.type.toLowerCase() === filters.type!.toLowerCase());
+      const t = filters.type.trim().toLowerCase();
+      items = items.filter((c) => (c.type || '').toLowerCase() === t);
     }
 
     if (filters.industry) {
-      items = items.filter(
-        (c) => c.industry.toLowerCase() === filters.industry!.toLowerCase()
-      );
+      const targetSlug = normalizeIndustrySlug(filters.industry);
+      items = items.filter((c) => {
+        const itemSlug = normalizeIndustrySlug(c.industry);
+        return itemSlug === targetSlug;
+      });
     }
 
     if (filters.genre) {
-      const g = filters.genre.toLowerCase();
+      const g = filters.genre.toLowerCase().trim();
       items = items.filter((c) =>
-        c.genre.some((item) => item.toLowerCase().includes(g))
+        (c.genre || []).some((item) => item.toLowerCase().includes(g))
       );
     }
 
@@ -151,8 +229,8 @@ export const dataStore = {
         (c) =>
           c.title.toLowerCase().includes(query) ||
           c.description.toLowerCase().includes(query) ||
-          c.cast.some((actor) => actor.toLowerCase().includes(query)) ||
-          c.genre.some((g) => g.toLowerCase().includes(query)) ||
+          (c.cast && c.cast.some((actor) => actor.toLowerCase().includes(query))) ||
+          (c.genre && c.genre.some((g) => g.toLowerCase().includes(query))) ||
           c.industry.toLowerCase().includes(query) ||
           (c.remixName && c.remixName.toLowerCase().includes(query))
       );
@@ -167,6 +245,8 @@ export const dataStore = {
       items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     } else if (filters.sort === 'views') {
       items.sort((a, b) => (b.views || 0) - (a.views || 0));
+    } else if (filters.sort === 'bpm') {
+      items.sort((a, b) => (b.bpm || 0) - (a.bpm || 0));
     } else if (filters.sort === 'year') {
       items.sort((a, b) => b.year - a.year);
     } else {
@@ -200,12 +280,15 @@ export const dataStore = {
     const store = initStore();
     const newContent: SeedContent = {
       ...contentData,
+      industry: normalizeIndustrySlug(contentData.industry) as any,
+      isPublished: contentData.isPublished !== false,
       _id: `cnt-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       rating: 8.5,
       views: 0,
       createdAt: new Date().toISOString(),
     };
     store.content.unshift(newContent);
+    persistStoreToDisk();
     return newContent;
   },
 
@@ -213,7 +296,15 @@ export const dataStore = {
     const store = initStore();
     const idx = store.content.findIndex((c) => c._id === id);
     if (idx === -1) return null;
-    store.content[idx] = { ...store.content[idx], ...updates };
+    const cleanUpdates = { ...updates };
+    if (cleanUpdates.industry) {
+      cleanUpdates.industry = normalizeIndustrySlug(cleanUpdates.industry) as any;
+    }
+    if (cleanUpdates.isPublished !== undefined) {
+      cleanUpdates.isPublished = cleanUpdates.isPublished !== false;
+    }
+    store.content[idx] = { ...store.content[idx], ...cleanUpdates };
+    persistStoreToDisk();
     return store.content[idx];
   },
 
@@ -222,6 +313,7 @@ export const dataStore = {
     const initialLen = store.content.length;
     store.content = store.content.filter((c) => c._id !== id);
     store.episodes = store.episodes.filter((e) => e.seriesId !== id);
+    persistStoreToDisk();
     return store.content.length < initialLen;
   },
 
@@ -250,6 +342,7 @@ export const dataStore = {
         series.seasonsCount = episodeData.season;
       }
     }
+    persistStoreToDisk();
     return newEp;
   },
 
@@ -266,11 +359,11 @@ export const dataStore = {
       )
       .slice(0, 6);
 
-    const bollywood = store.content.filter((c) => c.industry === 'bollywood').length;
-    const hollywood = store.content.filter((c) => c.industry === 'hollywood').length;
-    const bhojpuri = store.content.filter((c) => c.industry === 'bhojpuri').length;
-    const tollywood = store.content.filter((c) => c.industry === 'tollywood').length;
-    const srajenDj = store.content.filter((c) => c.industry === 'srajen-dj').length;
+    const bollywood = store.content.filter((c) => normalizeIndustrySlug(c.industry) === 'bollywood').length;
+    const hollywood = store.content.filter((c) => normalizeIndustrySlug(c.industry) === 'hollywood').length;
+    const bhojpuri = store.content.filter((c) => normalizeIndustrySlug(c.industry) === 'bhojpuri').length;
+    const tollywood = store.content.filter((c) => normalizeIndustrySlug(c.industry) === 'tollywood').length;
+    const srajenDj = store.content.filter((c) => normalizeIndustrySlug(c.industry) === 'srajen-dj').length;
 
     const totalStorageBytes = [...store.content, ...store.episodes].reduce(
       (acc, item: any) => acc + (item.fileSize || 0),

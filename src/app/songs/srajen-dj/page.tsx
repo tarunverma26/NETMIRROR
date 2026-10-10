@@ -17,6 +17,8 @@ const industries = [
   { id: 'srajen-dj', name: 'Srajen Dj' },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function SrajenDjPage() {
   const { playTrack, currentTrack, isPlaying, togglePlay } = useAudio();
   const { toggleWatchlist, isInWatchlist } = useAuth();
@@ -38,7 +40,7 @@ export default function SrajenDjPage() {
       if (selectedGenre) q.set('genre', selectedGenre);
       if (sortOption !== 'bpm') q.set('sort', sortOption);
 
-      const res = await fetch(`/api/content?${q.toString()}`);
+      const res = await fetch(`/api/content?${q.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const d = await res.json();
         let items: ContentCardItem[] = d.items || [];

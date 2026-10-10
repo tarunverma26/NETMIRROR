@@ -35,11 +35,20 @@ const ContentSchema = new Schema<IContent>(
     type: {
       type: String,
       required: true,
+      lowercase: true,
+      trim: true,
       enum: ['movie', 'song', 'series'],
     },
     industry: {
       type: String,
       required: true,
+      trim: true,
+      set: (val: string) => {
+        if (!val || typeof val !== 'string') return val;
+        const cleaned = val.trim().toLowerCase().replace(/[\s_]+/g, '-');
+        if (cleaned === 'srajen dj' || cleaned === 'srajendj') return 'srajen-dj';
+        return cleaned;
+      },
       enum: ['bollywood', 'hollywood', 'bhojpuri', 'tollywood', 'srajen-dj'],
       validate: {
         validator: function(this: any, val: string) {

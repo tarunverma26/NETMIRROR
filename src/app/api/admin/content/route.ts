@@ -1,11 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { verifyAdminSession } from '@/lib/adminAuth';
 import { connectToDatabase } from '@/lib/db';
 import Content from '@/models/Content';
 import Episode from '@/models/Episode';
-import { dataStore } from '@/lib/dataStore';
+import { dataStore, normalizeIndustrySlug } from '@/lib/dataStore';
 import { contentSchema, episodeSchema } from '@/lib/validations';
 import { applySecurityHeaders } from '@/lib/security';
+
+export const dynamic = 'force-dynamic';
+
+export function revalidateContentPaths(type?: string, industry?: string) {
+  try {
+    revalidatePath('/', 'layout');
+    revalidatePath('/songs');
+    revalidatePath('/songs/srajen-dj');
+    revalidatePath('/movies');
+    revalidatePath('/series');
+    if (industry) {
+      const slug = normalizeIndustrySlug(industry);
+      revalidatePath(`/songs/${slug}`);
+      revalidatePath(`/movies/${slug}`);
+      revalidatePath(`/series/${slug}`);
+    }
+    revalidatePath('/admin');
+    revalidatePath('/admin/manage');
+  } catch (err) {
+    console.warn('revalidatePath notice:', err);
+  }
+}
 
 // GET /api/admin/content: retrieve all content for admin management (includes unpublished)
 export async function GET(req: NextRequest) {
@@ -127,6 +150,13 @@ export async function POST(req: NextRequest) {
     }
 
     // Standard content (Movie, Song, Series)
+    if (typeof body.industry === 'string') {
+      body.industry = normalizeIndustrySlug(body.industry);
+    }
+    if (typeof body.type === 'string') {
+      body.type = body.type.trim().toLowerCase();
+    }
+
     const parsed = contentSchema.safeParse(body);
     if (!parsed.success) {
       return applySecurityHeaders(
@@ -138,31 +168,61 @@ export async function POST(req: NextRequest) {
     }
 
     const data = parsed.data;
+    const normIndustry = normalizeIndustrySlug(data.industry);
+
+    // Sensible defaults
+    let resolvedGenre = data.genre && data.genre.length > 0 ? data.genre : [];
+    if (resolvedGenre.length === 0 || (resolvedGenre.length === 1 && resolvedGenre[0].toLowerCase() === 'cinema' && data.type === 'song')) {
+      if (normIndustry === 'srajen-dj') {
+        resolvedGenre = ['Club VIP Mix', 'EDM', 'Bass Boosted'];
+      } else if (data.type === 'song') {
+        resolvedGenre = ['Soundtrack', 'Music'];
+      } else {
+        resolvedGenre = ['Cinema', 'Drama'];
+      }
+    }
+
+    const fallbackThumb =
+      normIndustry === 'srajen-dj'
+        ? 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop'
+        : data.type === 'song'
+        ? 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop'
+        : data.type === 'series'
+        ? 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?q=80&w=900&auto=format&fit=crop'
+        : 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=900&auto=format&fit=crop';
+
+    const resolvedThumbnail = data.thumbnailUrl || fallbackThumb;
+    const resolvedDuration = data.duration || (data.type === 'song' ? '3:45' : data.type === 'movie' ? '2h 15m' : '45m');
+    const resolvedBpm = data.type === 'song' && normIndustry === 'srajen-dj' ? (data.bpm || 128) : data.bpm;
+    const resolvedRemix = data.type === 'song' && normIndustry === 'srajen-dj' ? (data.remixName || 'Original Mix') : data.remixName;
+
     const isMongo = await connectToDatabase();
 
     if (isMongo) {
       const newContent = await Content.create({
         type: data.type,
-        industry: data.industry,
+        industry: normIndustry,
         title: data.title,
-        description: data.description,
-        genre: data.genre,
+        description: data.description || '',
+        genre: resolvedGenre,
         year: data.year,
-        language: data.language,
-        cast: data.cast,
-        thumbnailUrl: data.thumbnailUrl,
+        language: data.language || 'Hindi',
+        cast: data.cast || [],
+        thumbnailUrl: resolvedThumbnail,
         mediaUrl: data.mediaUrl,
-        duration: data.duration,
-        isPublished: data.isPublished,
+        duration: resolvedDuration,
+        isPublished: data.isPublished !== false,
         seasonsCount: data.seasonsCount,
         episodesCount: data.episodesCount,
         storageKey: data.storageKey,
         fileSize: data.fileSize,
         mimeType: data.mimeType,
-        remixName: data.remixName,
-        bpm: data.bpm,
+        remixName: resolvedRemix,
+        bpm: resolvedBpm,
         uploadedBy: auth.payload?.userId,
       });
+
+      revalidateContentPaths(data.type, normIndustry);
 
       return applySecurityHeaders(
         NextResponse.json(
@@ -174,25 +234,27 @@ export async function POST(req: NextRequest) {
 
     const created = dataStore.createContent({
       type: data.type,
-      industry: data.industry,
+      industry: normIndustry as any,
       title: data.title,
       description: data.description || '',
-      genre: data.genre,
+      genre: resolvedGenre,
       year: data.year,
-      language: data.language,
-      cast: data.cast,
-      thumbnailUrl: data.thumbnailUrl,
+      language: data.language || 'Hindi',
+      cast: data.cast || [],
+      thumbnailUrl: resolvedThumbnail,
       mediaUrl: data.mediaUrl || '',
-      duration: data.duration || '',
+      duration: resolvedDuration,
       isPublished: data.isPublished !== false,
       seasonsCount: data.seasonsCount || 1,
       episodesCount: data.episodesCount || 0,
-      remixName: data.remixName,
-      bpm: data.bpm,
+      remixName: resolvedRemix,
+      bpm: resolvedBpm,
     });
     (created as any).storageKey = data.storageKey;
     (created as any).fileSize = data.fileSize;
     (created as any).mimeType = data.mimeType;
+
+    revalidateContentPaths(data.type, normIndustry);
 
     return applySecurityHeaders(
       NextResponse.json(

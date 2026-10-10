@@ -12,33 +12,59 @@ export const loginSchema = z.object({
 });
 
 export const contentSchema = z.object({
-  type: z.enum(['movie', 'song', 'series'], {
-    errorMap: () => ({ message: 'Type must be movie, song, or series' }),
-  }),
-  industry: z.enum(['bollywood', 'hollywood', 'bhojpuri', 'tollywood', 'srajen-dj'], {
-    errorMap: () => ({
-      message: 'Industry must be bollywood, hollywood, bhojpuri, tollywood, or srajen-dj',
-    }),
-  }),
+  type: z.preprocess(
+    (val) => (typeof val === 'string' ? val.trim().toLowerCase() : val),
+    z.enum(['movie', 'song', 'series'], {
+      errorMap: () => ({ message: 'Type must be movie, song, or series' }),
+    })
+  ),
+  industry: z.preprocess(
+    (val) => {
+      if (typeof val === 'string') {
+        const cleaned = val.trim().toLowerCase().replace(/[\s_]+/g, '-');
+        if (cleaned === 'srajen dj' || cleaned === 'srajendj') return 'srajen-dj';
+        return cleaned;
+      }
+      return val;
+    },
+    z.enum(['bollywood', 'hollywood', 'bhojpuri', 'tollywood', 'srajen-dj'], {
+      errorMap: () => ({
+        message: 'Industry must be bollywood, hollywood, bhojpuri, tollywood, or srajen-dj',
+      }),
+    })
+  ),
   title: z.string().min(1, 'Title is required').max(150),
   description: z.string().optional().default(''),
-  genre: z.union([z.array(z.string()), z.string()]).transform((val) => {
-    if (Array.isArray(val)) return val;
-    return val
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }),
+  genre: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .default([])
+    .transform((val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      return val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }),
   year: z.coerce.number().min(1900).max(2100).default(new Date().getFullYear()),
   language: z.string().default('Hindi'),
-  cast: z.union([z.array(z.string()), z.string()]).transform((val) => {
-    if (Array.isArray(val)) return val;
-    return val
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-  }),
-  thumbnailUrl: z.string().min(1, 'Thumbnail is required'),
+  cast: z
+    .union([z.array(z.string()), z.string()])
+    .optional()
+    .default([])
+    .transform((val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val;
+      return val
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }),
+  thumbnailUrl: z.preprocess(
+    (val) => (typeof val === 'string' ? val.trim() : ''),
+    z.string().optional().default('')
+  ),
   mediaUrl: z.string().optional().default(''),
   duration: z.string().optional().default(''),
   isPublished: z.boolean().optional().default(true),

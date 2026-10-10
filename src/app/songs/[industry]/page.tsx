@@ -18,6 +18,8 @@ const industries = [
   { id: 'srajen-dj', name: 'Srajen Dj' },
 ];
 
+export const dynamic = 'force-dynamic';
+
 export default function IndustrySongsPage() {
   const params = useParams();
   const currentIndustry = (params.industry as string) || 'bollywood';
@@ -39,7 +41,7 @@ export default function IndustrySongsPage() {
       if (search) q.set('search', search);
       if (selectedGenre) q.set('genre', selectedGenre);
 
-      const res = await fetch(`/api/content?${q.toString()}`);
+      const res = await fetch(`/api/content?${q.toString()}`, { cache: 'no-store' });
       if (res.ok) {
         const d = await res.json();
         setSongs(d.items || []);

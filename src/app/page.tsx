@@ -8,6 +8,8 @@ import TiltCard from '@/components/3d/TiltCard';
 import ContentCard, { ContentCardItem } from '@/components/ui/ContentCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   const [recentMovies, setRecentMovies] = useState<ContentCardItem[]>([]);
   const [recentSongs, setRecentSongs] = useState<ContentCardItem[]>([]);
@@ -18,9 +20,9 @@ export default function HomePage() {
     async function loadCatalog() {
       try {
         const [moviesRes, songsRes, seriesRes] = await Promise.all([
-          fetch('/api/content?type=movie&limit=6'),
-          fetch('/api/content?type=song&limit=6'),
-          fetch('/api/content?type=series&limit=6'),
+          fetch('/api/content?type=movie&limit=6', { cache: 'no-store' }),
+          fetch('/api/content?type=song&limit=6', { cache: 'no-store' }),
+          fetch('/api/content?type=series&limit=6', { cache: 'no-store' }),
         ]);
 
         if (moviesRes.ok) {

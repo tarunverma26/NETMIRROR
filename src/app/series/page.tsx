@@ -8,6 +8,8 @@ import FilmStripBg from '@/components/backgrounds/FilmStripBg';
 import ContentCard, { ContentCardItem } from '@/components/ui/ContentCard';
 import SkeletonCard from '@/components/ui/SkeletonCard';
 
+export const dynamic = 'force-dynamic';
+
 export default function SeriesHubPage() {
   const [seriesList, setSeriesList] = useState<ContentCardItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +17,7 @@ export default function SeriesHubPage() {
   useEffect(() => {
     async function loadSeries() {
       try {
-        const res = await fetch('/api/content?type=series&limit=12');
+        const res = await fetch('/api/content?type=series&limit=12', { cache: 'no-store' });
         if (res.ok) {
           const d = await res.json();
           setSeriesList(d.items || []);
