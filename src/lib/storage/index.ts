@@ -67,7 +67,7 @@ export function generateStorageKey(
   const cleanFilename = sanitizeFilename(filename);
   const uuid = crypto.randomUUID().slice(0, 8);
   const safeType = type.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const safeIndustry = industry.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const safeIndustry = industry.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
   return `${safeType}/${safeIndustry}/${yyyyMm}/${uuid}-${cleanFilename}`;
 }

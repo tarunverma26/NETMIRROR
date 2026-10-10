@@ -159,6 +159,8 @@ export async function POST(req: NextRequest) {
         storageKey: data.storageKey,
         fileSize: data.fileSize,
         mimeType: data.mimeType,
+        remixName: data.remixName,
+        bpm: data.bpm,
         uploadedBy: auth.payload?.userId,
       });
 
@@ -185,6 +187,8 @@ export async function POST(req: NextRequest) {
       isPublished: data.isPublished !== false,
       seasonsCount: data.seasonsCount || 1,
       episodesCount: data.episodesCount || 0,
+      remixName: data.remixName,
+      bpm: data.bpm,
     });
     (created as any).storageKey = data.storageKey;
     (created as any).fileSize = data.fileSize;

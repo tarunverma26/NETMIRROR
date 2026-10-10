@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
         hollywood: 0,
         bhojpuri: 0,
         tollywood: 0,
+        'srajen-dj': 0,
       };
       for (const row of industryAgg) {
         if (row._id && byIndustry[row._id] !== undefined) {
@@ -68,6 +69,7 @@ export async function GET(req: NextRequest) {
             totalContent,
             byType: { movie: movies, song: songs, series: series, episodes },
             byIndustry,
+            srajenDjSongs: byIndustry['srajen-dj'] || 0,
             totalStorageBytes,
             totalStorageFormatted: formatBytes(totalStorageBytes),
           },
@@ -89,6 +91,7 @@ export async function GET(req: NextRequest) {
           totalContent: stats.totalContent,
           byType: stats.byType,
           byIndustry: stats.byIndustry,
+          srajenDjSongs: stats.srajenDjSongs || 0,
           totalStorageBytes: stats.totalStorageBytes,
           totalStorageFormatted: stats.totalStorageFormatted,
         },

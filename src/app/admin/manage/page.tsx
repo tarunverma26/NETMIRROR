@@ -40,6 +40,8 @@ export default function AdminManagePage() {
   const [editYear, setEditYear] = useState(2024);
   const [editDuration, setEditDuration] = useState('');
   const [editThumbnailUrl, setEditThumbnailUrl] = useState('');
+  const [editRemixName, setEditRemixName] = useState('');
+  const [editBpm, setEditBpm] = useState('');
   const [isUploadingThumb, setIsUploadingThumb] = useState(false);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
@@ -117,6 +119,8 @@ export default function AdminManagePage() {
     setEditYear(item.year);
     setEditDuration(item.duration);
     setEditThumbnailUrl(item.thumbnailUrl || '');
+    setEditRemixName((item as any).remixName || '');
+    setEditBpm((item as any).bpm ? String((item as any).bpm) : '');
   };
 
   const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -140,16 +144,23 @@ export default function AdminManagePage() {
     if (!editingItem) return;
 
     try {
+      const updatePayload: Record<string, unknown> = {
+        title: editTitle.trim(),
+        genre: editGenre.split(',').map((s) => s.trim()),
+        year: Number(editYear),
+        duration: editDuration.trim(),
+        thumbnailUrl: editThumbnailUrl.trim(),
+      };
+
+      if (editingItem.type === 'song') {
+        updatePayload.remixName = editRemixName.trim();
+        updatePayload.bpm = editBpm ? Number(editBpm) : null;
+      }
+
       const res = await fetch(`/api/admin/content/${editingItem._id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: editTitle.trim(),
-          genre: editGenre.split(',').map((s) => s.trim()),
-          year: Number(editYear),
-          duration: editDuration.trim(),
-          thumbnailUrl: editThumbnailUrl.trim(),
-        }),
+        body: JSON.stringify(updatePayload),
       });
 
       if (res.ok) {
@@ -256,6 +267,7 @@ export default function AdminManagePage() {
             <option value="hollywood">Hollywood</option>
             <option value="bhojpuri">Bhojpuri</option>
             <option value="tollywood">Tollywood</option>
+            <option value="srajen-dj">Srajen Dj</option>
           </select>
         </div>
       </div>
@@ -301,8 +313,13 @@ export default function AdminManagePage() {
                               />
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-white truncate max-w-xs">
-                                {item.title}
+                              <p className="font-semibold text-white truncate max-w-xs flex items-center">
+                                <span className="truncate">{item.title}</span>
+                                {(item as any).remixName && (
+                                  <span className="ml-1.5 px-1.5 py-0.5 rounded text-[10px] bg-red-950/80 border border-primary/40 text-red-300 font-mono font-medium flex-shrink-0">
+                                    {(item as any).remixName}
+                                  </span>
+                                )}
                               </p>
                               <p className="text-[10px] text-gray-400 truncate">
                                 {item.genre?.join(', ')}
@@ -315,8 +332,8 @@ export default function AdminManagePage() {
                             {item.type}
                           </span>
                         </td>
-                        <td className="py-3 px-4 capitalize font-mono text-[11px] text-red-300">
-                          {item.industry}
+                        <td className="py-3 px-4 font-mono text-[11px] text-red-300">
+                          {item.industry === 'srajen-dj' ? 'Srajen Dj' : item.industry}
                         </td>
                         <td className="py-3 px-4 font-mono text-gray-400">{item.year}</td>
                         <td className="py-3 px-4 font-mono text-gray-400">{item.duration}</td>
@@ -527,6 +544,35 @@ export default function AdminManagePage() {
                   />
                 </div>
               </div>
+
+              {editingItem.type === 'song' && (
+                <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-red-950/20 border border-primary/20">
+                  <div>
+                    <label className="block text-xs font-semibold text-red-300 mb-1">
+                      Remix Name (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={editRemixName}
+                      onChange={(e) => setEditRemixName(e.target.value)}
+                      placeholder="e.g. Club VIP Mix"
+                      className="w-full px-3 py-2 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-red-300 mb-1">
+                      BPM (Optional)
+                    </label>
+                    <input
+                      type="number"
+                      value={editBpm}
+                      onChange={(e) => setEditBpm(e.target.value)}
+                      placeholder="e.g. 128"
+                      className="w-full px-3.5 py-2 rounded-xl bg-surface border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-primary"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-2 pt-3">
                 <button

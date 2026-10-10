@@ -33,6 +33,8 @@ export async function GET(req: NextRequest) {
           { description: { $regex: search, $options: 'i' } },
           { cast: { $regex: search, $options: 'i' } },
           { genre: { $regex: search, $options: 'i' } },
+          { remixName: { $regex: search, $options: 'i' } },
+          { industry: { $regex: search, $options: 'i' } },
         ];
       }
 

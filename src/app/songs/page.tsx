@@ -37,24 +37,35 @@ export default function SongsHubPage() {
       name: 'Bollywood Music',
       subtitle: 'Sufi ballads, indie synthpop & timeless romantic duets',
       poster: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop',
+      isDj: false,
     },
     {
       id: 'hollywood',
       name: 'Hollywood Tracks',
       subtitle: 'Synthwave hits, electro-pop anthems & ambient rock',
       poster: 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?q=80&w=900&auto=format&fit=crop',
+      isDj: false,
     },
     {
       id: 'bhojpuri',
       name: 'Bhojpuri Beats',
       subtitle: 'High-energy desi brass, festive melodies & rustic soul',
       poster: 'https://images.unsplash.com/photo-1487180144351-b8472da7d491?q=80&w=900&auto=format&fit=crop',
+      isDj: false,
     },
     {
       id: 'tollywood',
       name: 'Tollywood Rhythms',
       subtitle: 'Thunderous mass anthems, nadaswaram drops & soulful melodies',
       poster: 'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?q=80&w=900&auto=format&fit=crop',
+      isDj: false,
+    },
+    {
+      id: 'srajen-dj',
+      name: 'Srajen Dj',
+      subtitle: 'Bass-boosted club edits, nonstop EDM drops & exclusive party remixes',
+      poster: 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop',
+      isDj: true,
     },
   ];
 
@@ -80,33 +91,64 @@ export default function SongsHubPage() {
           </p>
         </div>
 
-        {/* 4 Industry Music Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* 5 Industry Music Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-5">
           {industries.map((ind) => (
             <Link
               key={ind.id}
               href={`/songs/${ind.id}`}
-              className="group relative h-72 sm:h-80 rounded-2xl overflow-hidden border border-white/10 hover:border-primary/50 bg-surface-card transition-all duration-300 hover:shadow-red-glow"
+              className={`group relative h-80 rounded-2xl overflow-hidden border transition-all duration-300 flex flex-col justify-between ${
+                ind.isDj
+                  ? 'border-primary/60 bg-gradient-to-b from-red-950/40 via-surface-card to-black shadow-[0_0_20px_rgba(239,68,68,0.25)] hover:shadow-[0_0_30px_rgba(239,68,68,0.6)] hover:border-red-400'
+                  : 'border-white/10 hover:border-primary/50 bg-surface-card hover:shadow-red-glow'
+              }`}
             >
               <Image
                 src={ind.poster}
                 alt={ind.name}
                 fill
-                className="object-cover filter brightness-[0.4] group-hover:brightness-[0.6] group-hover:scale-105 transition-all duration-500"
+                className={`object-cover transition-all duration-500 ${
+                  ind.isDj
+                    ? 'filter brightness-[0.45] group-hover:brightness-[0.7] group-hover:scale-110'
+                    : 'filter brightness-[0.4] group-hover:brightness-[0.6] group-hover:scale-105'
+                }`}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
 
-              <div className="relative z-10 h-full p-6 flex flex-col justify-end space-y-2">
-                <span className="text-[10px] uppercase font-mono tracking-widest text-red-400">
-                  Audio Catalog
+              {/* DJ Badge / Spinning Turntable Visual for Srajen Dj */}
+              {ind.isDj && (
+                <div className="relative z-10 p-4 flex items-center justify-between">
+                  <span className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-red-950/80 border border-primary/60 text-red-300 text-[10px] font-mono font-bold uppercase tracking-wider backdrop-blur-md shadow-[0_0_12px_rgba(239,68,68,0.5)]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping" />
+                    <span>DJ Console</span>
+                  </span>
+
+                  <div className="w-9 h-9 rounded-full bg-black/80 border border-primary/60 flex items-center justify-center text-primary shadow-[0_0_15px_rgba(239,68,68,0.5)] group-hover:scale-110 transition-transform">
+                    <Disc className="w-5 h-5 animate-[spin_4s_linear_infinite]" />
+                  </div>
+                </div>
+              )}
+
+              <div className={`relative z-10 p-5 flex flex-col justify-end space-y-2 ${ind.isDj ? 'mt-auto' : 'h-full'}`}>
+                <span className="text-[10px] uppercase font-mono tracking-widest text-red-400 flex items-center space-x-1">
+                  {ind.isDj ? (
+                    <>
+                      <Volume2 className="w-3 h-3 text-red-400 inline" />
+                      <span>Club Remixes & Edits</span>
+                    </>
+                  ) : (
+                    <span>Audio Catalog</span>
+                  )}
                 </span>
-                <h3 className="text-2xl font-black text-white group-hover:text-red-300 transition-colors">
+                <h3 className={`text-xl sm:text-2xl font-black text-white transition-colors ${
+                  ind.isDj ? 'text-red-300 group-hover:text-red-200 drop-shadow-[0_0_8px_rgba(239,68,68,0.4)]' : 'group-hover:text-red-300'
+                }`}>
                   {ind.name}
                 </h3>
                 <p className="text-xs text-gray-300 line-clamp-2 leading-relaxed">
                   {ind.subtitle}
                 </p>
-                <div className="pt-2 flex items-center text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
+                <div className="pt-1 flex items-center text-xs font-semibold text-primary group-hover:translate-x-1 transition-transform">
                   <span>Open Tracklist</span>
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </div>

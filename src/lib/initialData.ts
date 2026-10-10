@@ -1,7 +1,7 @@
 export interface SeedContent {
   _id: string;
   type: 'movie' | 'song' | 'series';
-  industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood';
+  industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj';
   title: string;
   description: string;
   genre: string[];
@@ -16,6 +16,8 @@ export interface SeedContent {
   views: number;
   seasonsCount?: number;
   episodesCount?: number;
+  remixName?: string;
+  bpm?: number;
   createdAt: string;
 }
 
@@ -335,6 +337,68 @@ export const initialContent: SeedContent[] = [
     rating: 9.1,
     views: 410000,
     createdAt: new Date("2023-09-22").toISOString(),
+  },
+
+  // ================= SRAJEN DJ TRACKS =================
+  {
+    _id: "s-dj-1",
+    type: "song",
+    industry: "srajen-dj",
+    title: "Desi Drop - Festival Club Anthem",
+    description: "High-octane club mix blending thumping 808 sub-bass with festival synth leads by Srajen Dj.",
+    genre: ["EDM", "Club", "Bass Boosted"],
+    year: 2026,
+    language: "Hindi",
+    cast: ["Srajen Dj"],
+    thumbnailUrl: "https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop",
+    mediaUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+    duration: "3:42",
+    isPublished: true,
+    rating: 9.8,
+    views: 189000,
+    remixName: "Club VIP Mix",
+    bpm: 132,
+    createdAt: new Date("2026-10-05").toISOString(),
+  },
+  {
+    _id: "s-dj-2",
+    type: "song",
+    industry: "srajen-dj",
+    title: "Midnight Dholak Groove (Bass Boost)",
+    description: "Heavy bassline dholak fusion with energetic drops designed for dancefloors.",
+    genre: ["Desi Bass", "Remix", "Dance"],
+    year: 2026,
+    language: "Hindi",
+    cast: ["Srajen Dj"],
+    thumbnailUrl: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=900&auto=format&fit=crop",
+    mediaUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+    duration: "4:08",
+    isPublished: true,
+    rating: 9.6,
+    views: 142000,
+    remixName: "Extended Bass Mix",
+    bpm: 128,
+    createdAt: new Date("2026-10-06").toISOString(),
+  },
+  {
+    _id: "s-dj-3",
+    type: "song",
+    industry: "srajen-dj",
+    title: "Neon Raat Electro Mashup",
+    description: "Electro-house mashup featuring vocal chops and relentless driving percussion.",
+    genre: ["Mashup", "Electro House"],
+    year: 2026,
+    language: "Hindi",
+    cast: ["Srajen Dj", "DJ V-Rex"],
+    thumbnailUrl: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?q=80&w=900&auto=format&fit=crop",
+    mediaUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+    duration: "3:25",
+    isPublished: true,
+    rating: 9.4,
+    views: 98000,
+    remixName: "Radio Festival Edit",
+    bpm: 130,
+    createdAt: new Date("2026-10-07").toISOString(),
   },
 
   // ================= WEB SERIES =================

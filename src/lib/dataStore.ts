@@ -152,7 +152,9 @@ export const dataStore = {
           c.title.toLowerCase().includes(query) ||
           c.description.toLowerCase().includes(query) ||
           c.cast.some((actor) => actor.toLowerCase().includes(query)) ||
-          c.genre.some((g) => g.toLowerCase().includes(query))
+          c.genre.some((g) => g.toLowerCase().includes(query)) ||
+          c.industry.toLowerCase().includes(query) ||
+          (c.remixName && c.remixName.toLowerCase().includes(query))
       );
     }
 
@@ -268,6 +270,7 @@ export const dataStore = {
     const hollywood = store.content.filter((c) => c.industry === 'hollywood').length;
     const bhojpuri = store.content.filter((c) => c.industry === 'bhojpuri').length;
     const tollywood = store.content.filter((c) => c.industry === 'tollywood').length;
+    const srajenDj = store.content.filter((c) => c.industry === 'srajen-dj').length;
 
     const totalStorageBytes = [...store.content, ...store.episodes].reduce(
       (acc, item: any) => acc + (item.fileSize || 0),
@@ -289,7 +292,8 @@ export const dataStore = {
       episodes,
       totalContent: store.content.length,
       byType: { movie: movies, song: songs, series: series, episodes },
-      byIndustry: { bollywood, hollywood, bhojpuri, tollywood },
+      byIndustry: { bollywood, hollywood, bhojpuri, tollywood, 'srajen-dj': srajenDj },
+      srajenDjSongs: srajenDj,
       totalStorageBytes,
       totalStorageFormatted: formatBytes(totalStorageBytes),
       recentUploads,

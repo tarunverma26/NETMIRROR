@@ -20,6 +20,8 @@ import {
   FileAudio,
   FileVideo,
   ListPlus,
+  Disc,
+  Volume2,
 } from 'lucide-react';
 import {
   R2DirectUploader,
@@ -53,7 +55,7 @@ export default function AdminUploadPage() {
   const [isEpisodeMode, setIsEpisodeMode] = useState(false);
 
   // Common Metadata
-  const [industry, setIndustry] = useState<'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood'>('bollywood');
+  const [industry, setIndustry] = useState<'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj'>('bollywood');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [genre, setGenre] = useState('');
@@ -61,6 +63,8 @@ export default function AdminUploadPage() {
   const [language, setLanguage] = useState('Hindi');
   const [cast, setCast] = useState('');
   const [duration, setDuration] = useState('');
+  const [remixName, setRemixName] = useState('');
+  const [bpm, setBpm] = useState<string>('');
 
   // Selected Files
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -83,10 +87,19 @@ export default function AdminUploadPage() {
   const [bulkSongs, setBulkSongs] = useState<BulkSongItem[]>([]);
   const [bulkCommonArtist, setBulkCommonArtist] = useState('');
   const [bulkCommonGenre, setBulkCommonGenre] = useState('Pop');
+  const [bulkCommonRemixName, setBulkCommonRemixName] = useState('');
+  const [bulkCommonBpm, setBulkCommonBpm] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
   const bulkInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-switch industry away from srajen-dj if mode is not Song
+  useEffect(() => {
+    if (contentType !== 'song' && industry === 'srajen-dj') {
+      setIndustry('bollywood');
+    }
+  }, [contentType, industry]);
 
   // Load existing series list
   useEffect(() => {
@@ -253,6 +266,12 @@ export default function AdminUploadPage() {
               storageKey: mediaResult.key,
               fileSize: mediaResult.fileSize,
               mimeType: mediaResult.mimeType,
+              ...(contentType === 'song'
+                ? {
+                    remixName: remixName.trim() || undefined,
+                    bpm: bpm ? Number(bpm) : undefined,
+                  }
+                : {}),
             };
 
       const res = await fetch('/api/admin/content', {
@@ -277,6 +296,8 @@ export default function AdminUploadPage() {
       setGenre('');
       setCast('');
       setDuration('');
+      setRemixName('');
+      setBpm('');
       setMediaFile(null);
       setThumbnailFile(null);
       setThumbnailPreview('');
@@ -328,13 +349,17 @@ export default function AdminUploadPage() {
           language: 'Hindi',
           cast: bulkCommonArtist ? [bulkCommonArtist] : ['Featured Artist'],
           thumbnailUrl:
-            'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop',
+            industry === 'srajen-dj'
+              ? 'https://images.unsplash.com/photo-1571266028243-3716f02d2d2e?q=80&w=900&auto=format&fit=crop'
+              : 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?q=80&w=900&auto=format&fit=crop',
           mediaUrl: uploadRes.publicUrl,
           duration: item.duration,
           isPublished: true,
           storageKey: uploadRes.key,
           fileSize: uploadRes.fileSize,
           mimeType: uploadRes.mimeType,
+          remixName: bulkCommonRemixName.trim() || undefined,
+          bpm: bulkCommonBpm ? Number(bulkCommonBpm) : undefined,
         };
 
         await fetch('/api/admin/content', {
@@ -461,7 +486,7 @@ export default function AdminUploadPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
-                Industry
+                Industry / Category
               </label>
               <select
                 value={industry}
@@ -472,6 +497,7 @@ export default function AdminUploadPage() {
                 <option value="hollywood">Hollywood</option>
                 <option value="bhojpuri">Bhojpuri</option>
                 <option value="tollywood">Tollywood</option>
+                <option value="srajen-dj">Srajen Dj (Remixes & Club Edits)</option>
               </select>
             </div>
             <div>
@@ -482,7 +508,7 @@ export default function AdminUploadPage() {
                 type="text"
                 value={bulkCommonArtist}
                 onChange={(e) => setBulkCommonArtist(e.target.value)}
-                placeholder="e.g. Arijit Singh"
+                placeholder="e.g. Srajen Dj / Arijit Singh"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
               />
             </div>
@@ -494,8 +520,35 @@ export default function AdminUploadPage() {
                 type="text"
                 value={bulkCommonGenre}
                 onChange={(e) => setBulkCommonGenre(e.target.value)}
-                placeholder="e.g. Indie, Pop"
+                placeholder="e.g. EDM, Club, Pop"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-surface/40 border border-white/5">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                Common Remix Name (Optional)
+              </label>
+              <input
+                type="text"
+                value={bulkCommonRemixName}
+                onChange={(e) => setBulkCommonRemixName(e.target.value)}
+                placeholder="e.g. Club VIP Mix, Bass Boost"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5">
+                Common BPM (Optional)
+              </label>
+              <input
+                type="number"
+                value={bulkCommonBpm}
+                onChange={(e) => setBulkCommonBpm(e.target.value)}
+                placeholder="e.g. 128, 132"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-primary"
               />
             </div>
           </div>
@@ -611,6 +664,9 @@ export default function AdminUploadPage() {
                 <option value="hollywood">Hollywood (Global English)</option>
                 <option value="bhojpuri">Bhojpuri (Purvanchal / Bihar)</option>
                 <option value="tollywood">Tollywood (Telugu / South Cinema)</option>
+                {contentType === 'song' && (
+                  <option value="srajen-dj">Srajen Dj (Exclusive DJ Edits & Club Remixes)</option>
+                )}
               </select>
             </div>
 
@@ -763,6 +819,38 @@ export default function AdminUploadPage() {
                 placeholder="Cast or Artist names"
                 className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
               />
+            </div>
+          )}
+
+          {/* Optional DJ Track Fields for Songs */}
+          {contentType === 'song' && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-xl bg-red-950/20 border border-primary/20">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-red-300 mb-1.5 flex items-center space-x-1.5">
+                  <Disc className="w-3.5 h-3.5 text-primary" />
+                  <span>Remix / Edit Name (Optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={remixName}
+                  onChange={(e) => setRemixName(e.target.value)}
+                  placeholder="e.g. Club VIP Mix, Bass Boosted"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs focus:outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-red-300 mb-1.5 flex items-center space-x-1.5">
+                  <Volume2 className="w-3.5 h-3.5 text-primary" />
+                  <span>BPM - Beats Per Minute (Optional)</span>
+                </label>
+                <input
+                  type="number"
+                  value={bpm}
+                  onChange={(e) => setBpm(e.target.value)}
+                  placeholder="e.g. 128, 132, 140"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-surface border border-white/10 text-white text-xs font-mono focus:outline-none focus:border-primary"
+                />
+              </div>
             </div>
           )}
 

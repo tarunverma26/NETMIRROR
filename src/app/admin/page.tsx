@@ -12,6 +12,7 @@ import {
   ArrowUpRight,
   Clock,
   Sparkles,
+  Disc,
 } from 'lucide-react';
 import { SeedContent } from '@/lib/initialData';
 
@@ -21,11 +22,13 @@ interface AdminStats {
   series: number;
   episodes: number;
   totalContent: number;
+  srajenDjSongs?: number;
   byIndustry?: {
     bollywood: number;
     hollywood: number;
     bhojpuri: number;
     tollywood: number;
+    'srajen-dj'?: number;
   };
   totalStorageFormatted?: string;
   totalStorageBytes?: number;
@@ -38,11 +41,13 @@ export default function AdminDashboardPage() {
     series: 0,
     episodes: 0,
     totalContent: 0,
+    srajenDjSongs: 0,
     byIndustry: {
       bollywood: 0,
       hollywood: 0,
       bhojpuri: 0,
       tollywood: 0,
+      'srajen-dj': 0,
     },
     totalStorageFormatted: '0 B',
     totalStorageBytes: 0,
@@ -90,6 +95,14 @@ export default function AdminDashboardPage() {
       borderColor: 'border-red-900/30',
     },
     {
+      title: 'Srajen Dj Songs',
+      count: stats.srajenDjSongs ?? (stats.byIndustry?.['srajen-dj'] ?? 0),
+      icon: Disc,
+      href: '/songs/srajen-dj',
+      color: 'from-red-950/60 to-surface-card',
+      borderColor: 'border-red-500/50',
+    },
+    {
       title: 'Web Series',
       count: stats.series,
       icon: Tv,
@@ -120,7 +133,7 @@ export default function AdminDashboardPage() {
             Dashboard Overview
           </h1>
           <p className="text-xs text-gray-400 mt-1">
-            Real-time catalog metrics and media management across all 4 industries.
+            Real-time catalog metrics and media management across all 5 categories.
           </p>
         </div>
 
@@ -143,7 +156,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Metrics Row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         {statCards.map((c) => {
           const Icon = c.icon;
           return (
@@ -208,14 +221,15 @@ export default function AdminDashboardPage() {
             <span className="text-xs font-mono uppercase tracking-wider text-gray-400">
               Industry Catalog Distribution
             </span>
-            <span className="text-[10px] text-gray-400 font-mono">4 Global Regions</span>
+            <span className="text-[10px] text-gray-400 font-mono">5 Media Categories</span>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-1">
             {[
               { name: 'Bollywood', count: stats.byIndustry?.bollywood ?? 0, flag: 'IN' },
               { name: 'Hollywood', count: stats.byIndustry?.hollywood ?? 0, flag: 'US' },
               { name: 'Bhojpuri', count: stats.byIndustry?.bhojpuri ?? 0, flag: 'IN-BH' },
               { name: 'Tollywood', count: stats.byIndustry?.tollywood ?? 0, flag: 'IN-TL' },
+              { name: 'Srajen Dj', count: stats.byIndustry?.['srajen-dj'] ?? (stats.srajenDjSongs ?? 0), flag: 'DJ' },
             ].map((ind) => (
               <div
                 key={ind.name}

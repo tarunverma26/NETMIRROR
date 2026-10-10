@@ -33,3 +33,6 @@ Thumbs.db
 
 # Uploaded local media storage
 /storage
+
+# TypeScript build info
+*.tsbuildinfo

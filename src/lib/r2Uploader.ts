@@ -20,7 +20,7 @@ const CHUNK_SIZE = 15 * 1024 * 1024; // 15 MB chunk size (between 10-20 MB)
 export class R2DirectUploader {
   private file: File;
   private type: 'movie' | 'song' | 'series' | 'thumbnail' | 'poster';
-  private industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood';
+  private industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj';
   private onProgress: (progress: UploadProgress) => void;
 
   private isPaused: boolean = false;
@@ -34,7 +34,7 @@ export class R2DirectUploader {
   constructor(options: {
     file: File;
     type: 'movie' | 'song' | 'series' | 'thumbnail' | 'poster';
-    industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood';
+    industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj';
     onProgress: (progress: UploadProgress) => void;
   }) {
     this.file = options.file;

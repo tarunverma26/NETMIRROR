@@ -4,14 +4,27 @@ import { initStorageUpload } from '@/lib/storage';
 import { checkRateLimit, applySecurityHeaders } from '@/lib/security';
 import { z } from 'zod';
 
-const createUploadSchema = z.object({
-  filename: z.string().min(1).max(255),
-  contentType: z.string().min(1),
-  size: z.number().positive(),
-  type: z.enum(['movie', 'song', 'series', 'thumbnail', 'poster']),
-  industry: z.enum(['bollywood', 'hollywood', 'bhojpuri', 'tollywood']),
-  isMultipart: z.boolean().default(false),
-});
+const createUploadSchema = z
+  .object({
+    filename: z.string().min(1).max(255),
+    contentType: z.string().min(1),
+    size: z.number().positive(),
+    type: z.enum(['movie', 'song', 'series', 'thumbnail', 'poster']),
+    industry: z.enum(['bollywood', 'hollywood', 'bhojpuri', 'tollywood', 'srajen-dj']),
+    isMultipart: z.boolean().default(false),
+  })
+  .refine(
+    (data) => {
+      if (data.industry === 'srajen-dj') {
+        return data.type === 'song' || data.type === 'thumbnail' || data.type === 'poster';
+      }
+      return true;
+    },
+    {
+      message: 'Srajen Dj category is only available for songs and their artwork',
+      path: ['industry'],
+    }
+  );
 
 export async function POST(req: NextRequest) {
   const auth = verifyAdminSession(req);

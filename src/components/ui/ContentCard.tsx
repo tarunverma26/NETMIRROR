@@ -10,7 +10,7 @@ import { useAuth } from '@/context/AuthContext';
 export interface ContentCardItem {
   _id: string;
   type: 'movie' | 'song' | 'series';
-  industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood';
+  industry: 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj';
   title: string;
   description?: string;
   genre: string[];
@@ -23,6 +23,8 @@ export interface ContentCardItem {
   rating?: number;
   views?: number;
   episodesCount?: number;
+  remixName?: string;
+  bpm?: number;
 }
 
 interface ContentCardProps {
@@ -103,8 +105,12 @@ export default function ContentCard({ item, playlistContext }: ContentCardProps)
 
         {/* Top Badges */}
         <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-black/75 border border-primary/40 text-red-300 backdrop-blur-sm">
-            {item.industry}
+          <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider backdrop-blur-sm ${
+            item.industry === 'srajen-dj'
+              ? 'bg-red-950/90 border border-primary text-red-300 shadow-[0_0_10px_rgba(239,68,68,0.4)]'
+              : 'bg-black/75 border border-primary/40 text-red-300'
+          }`}>
+            {item.industry === 'srajen-dj' ? 'Srajen Dj' : item.industry}
           </span>
 
           <button
@@ -172,6 +178,22 @@ export default function ContentCard({ item, playlistContext }: ContentCardProps)
             <p className="text-xs text-gray-400 line-clamp-1 mt-0.5">
               {item.cast.join(', ')}
             </p>
+          )}
+
+          {/* Optional DJ Remix Name & BPM Badges */}
+          {(item.remixName || item.bpm) && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+              {item.remixName && (
+                <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-red-950/70 border border-primary/40 text-red-300">
+                  {item.remixName}
+                </span>
+              )}
+              {item.bpm && (
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-medium bg-black/60 border border-white/10 text-gray-300">
+                  {item.bpm} BPM
+                </span>
+              )}
+            </div>
           )}
         </div>
 

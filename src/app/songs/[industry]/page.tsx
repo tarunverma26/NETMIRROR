@@ -15,6 +15,7 @@ const industries = [
   { id: 'hollywood', name: 'Hollywood' },
   { id: 'bhojpuri', name: 'Bhojpuri' },
   { id: 'tollywood', name: 'Tollywood' },
+  { id: 'srajen-dj', name: 'Srajen Dj' },
 ];
 
 export default function IndustrySongsPage() {
@@ -99,7 +100,7 @@ export default function IndustrySongsPage() {
               Lossless Tracklist
             </span>
             <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight uppercase">
-              {currentIndustry} Songs
+              {industries.find((i) => i.id === currentIndustry.toLowerCase())?.name || currentIndustry} Songs
             </h1>
           </div>
 

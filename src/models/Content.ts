@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export type ContentType = 'movie' | 'song' | 'series';
-export type IndustryType = 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood';
+export type IndustryType = 'bollywood' | 'hollywood' | 'bhojpuri' | 'tollywood' | 'srajen-dj';
 
 export interface IContent extends Document {
   type: ContentType;
@@ -24,6 +24,8 @@ export interface IContent extends Document {
   storageKey?: string;
   fileSize?: number;
   mimeType?: string;
+  remixName?: string;
+  bpm?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -38,7 +40,16 @@ const ContentSchema = new Schema<IContent>(
     industry: {
       type: String,
       required: true,
-      enum: ['bollywood', 'hollywood', 'bhojpuri', 'tollywood'],
+      enum: ['bollywood', 'hollywood', 'bhojpuri', 'tollywood', 'srajen-dj'],
+      validate: {
+        validator: function(this: any, val: string) {
+          if (val === 'srajen-dj') {
+            return this.type === 'song';
+          }
+          return true;
+        },
+        message: 'Srajen Dj is only available for songs',
+      },
     },
     title: {
       type: String,
@@ -112,6 +123,15 @@ const ContentSchema = new Schema<IContent>(
     mimeType: {
       type: String,
       default: '',
+    },
+    remixName: {
+      type: String,
+      default: '',
+      trim: true,
+    },
+    bpm: {
+      type: Number,
+      default: null,
     },
   },
   {
